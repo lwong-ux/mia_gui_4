@@ -102,21 +102,26 @@ class WebSocketMia:
             try:
                 mensaje = await self.socket_activo.recv()
                 data = json.loads(mensaje)
+               
                 # Procesa el mensaje según su tipo
                 if data.get("type") == "ping":
                     if self.keep_alive == False:
                         print("\nKeep-Alive recibido del servidor: ", time.strftime("%H:%M:%S") , end="", flush=True)
                         self.keep_alive = True
                     print(".", end="", flush=True)
+
                 elif data.get("type") == "welcome":
+                    print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                     print("\nConexión WebSocket establecida (welcome)")
                     self.gui.despliega_mensaje_rx("Conexión WebSocket establecida (welcome)")
+
                 elif data.get("type") == "confirm_subscription":
                     identifier = json.loads(data.get("identifier", "{}"))
                     mia_id = identifier.get("mia_id")
+                    print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                     print(f"\nSuscripción confirmada al canal {mia_id}") 
                     self.gui.despliega_mensaje_rx(f"Suscripción confirmada al canal {mia_id}")
-                #elif data.get("message"):
+                
                 elif data.get("message") and data.get("type") is None:
                     self.keep_alive = False
                     #print("\nMensaje recibido:", time.strftime("%H:%M:%S"), data["message"])
