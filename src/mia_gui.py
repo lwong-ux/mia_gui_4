@@ -66,7 +66,7 @@ class MiaGui:
         
         # Menú con opciones de URL
         self.url_menu = ttk.Combobox(signal_frame, textvariable=self.url_var, font=("Arial", 14), width=30, state="readonly")
-        self.url_menu['values'] = ["ws://192.168.100.25:3000/cable", "ws://shielded-taiga-04156.herokuapp.com/cable"]
+        self.url_menu['values'] = ["ws://192.168.100.21:3000/cable", "ws://shielded-taiga-04156.herokuapp.com/cable"]
         self.url_menu.current(0)  # Selecciona la primera opción por defecto
         self.url_menu.pack(side=tk.RIGHT, padx=5)
         # self.url_entry = tk.Entry(signal_frame, font=("DejaVu Sans Mono", 12), width=35)
