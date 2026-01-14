@@ -106,6 +106,7 @@ class WebSocketMia:
                 # Procesa el mensaje según su tipo
                 if data.get("type") == "ping":
                     if self.keep_alive == False:
+                        print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                         print("\nKeep-Alive recibido del servidor: ", time.strftime("%H:%M:%S") , end="", flush=True)
                         self.keep_alive = True
                     print(".", end="", flush=True)
