@@ -26,25 +26,24 @@ class WebSocketMia:
         try:
             self.url = self.gui.lee_url()
             self.mesa_id = mia_id
-            #sysqb_socket = await websockets.connect(self.url, ping_interval=60, ping_timeout=30)
             self.socket_activo = await websockets.connect(
                 self.url,
                 ping_interval=None,      # deshabilita los ping automáticos de websocket
                 ping_timeout=None,       # deshabilita el timeout de ping
                 close_timeout=None       # no enforced close handshake timeout
             )
-            print("Conectando al WebSocket de Rails")
-            self.gui.despliega_mensaje_tx("Conectando al WebSocket de Rails")
+            print("Conectando al WebSocket de Rails...\n")
+            self.gui.despliega_mensaje_tx("Conectando al WebSocket de Rails...")
             
             # Se suscribe al canal MiaChannel con  identificador de mesa
             suscripcion = await self.suscribe(self.mesa_id)
             if not suscripcion:
                 return None
 
-            # Lanzar keepalive manual para evitar timeouts
+            # Arranca la tarea _keepalive() para enviar pings periódicamente.
             asyncio.create_task(self._keepalive())
 
-            # Inicia la tarea para leer mensajes del servidor SysQB
+            # Arranca la tarea lector_websocket() para leer continuamente los mensajes del socket activo: SysQB y excepciones.
             asyncio.create_task(self.lector_websocket())
             self.gui.conectado = True
             return self.socket_activo
@@ -55,7 +54,7 @@ class WebSocketMia:
             return None
         
     async def _keepalive(self):
-        # Envía pings manuales cada 5 segundos para mantener la conexión viva.
+        # Envía pings manuales cada segundo para mantener la conexión activa.
         try:
             while True:
                 await asyncio.sleep(1)
@@ -64,18 +63,20 @@ class WebSocketMia:
                 except Exception as e:
                     self.gui.conectado = False
                     print(f"Falló el envío del ping : {e}")
-                    self.gui.conectado = False
-                    # Si ping falla, la conexión se cerrará y lector_websocket lo detectará
-                    break # Sale del bucle para que lector_websocket maneje la reconexión
+                    break
+                    # Si el ping falla, existe un problema en la conexión y se finaliza _keepalive().
+                    # Mediante la excepción que se genera, la tarea lector_websocket() detectará la falla anterior
+                    # e intentará reconectar.
+                    #
         except Exception as e:
             print(f"Error en keepalive: {e}")
     
     async def desconecta_async(self):
-        # Desconecta el WebSocket
+        # Desconecta el WebSocket.
         try:
             await self.socket_activo.close()
-            print("Desconectado del WebSocket de Rails\n")
-            self.gui.despliega_mensaje_tx("Desconectado del WebSocket de Rails\n")
+            print("Desconectado del WebSocket de Rails por: desconecta_async()\n")
+            self.gui.despliega_mensaje_tx("\nDesconectado del WebSocket de Rails por: desconecta_async()\n")
             return True
         except Exception as e:
             print(f"Error al desconectar del WebSocket de Rails: {e}")
@@ -102,20 +103,23 @@ class WebSocketMia:
             try:
                 mensaje = await self.socket_activo.recv()
                 data = json.loads(mensaje)
-               
-                # Procesa el mensaje según su tipo
+                # Procesa el mensaje según su tipo:
+
+                # Ping de keep-alive.
                 if data.get("type") == "ping":
                     if self.keep_alive == False:
                         print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                         print("\nKeep-Alive recibido del servidor: ", time.strftime("%H:%M:%S") , end="", flush=True)
                         self.keep_alive = True
                     print(".", end="", flush=True)
-
+                
+                # Welcome al conectarse.
                 elif data.get("type") == "welcome":
                     print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                     print("\nConexión WebSocket establecida (welcome)")
                     self.gui.despliega_mensaje_rx("Conexión WebSocket establecida (welcome)")
-
+                
+                # Confirmación de suscripción al canal.
                 elif data.get("type") == "confirm_subscription":
                     identifier = json.loads(data.get("identifier", "{}"))
                     mia_id = identifier.get("mia_id")
@@ -123,6 +127,7 @@ class WebSocketMia:
                     print(f"\nSuscripción confirmada al canal {mia_id}") 
                     self.gui.despliega_mensaje_rx(f"Suscripción confirmada al canal {mia_id}")
                 
+                # Mensaje normal del canal.
                 elif data.get("message") and data.get("type") is None:
                     self.keep_alive = False
                     #print("\nMensaje recibido:", time.strftime("%H:%M:%S"), data["message"])
@@ -133,15 +138,24 @@ class WebSocketMia:
                 else:
                     print("\nMensaje desconocido:", data)
                     self.gui.despliega_mensaje_rx(f"Mensaje desconocido: {data}\n" )
+            #
+            # Manejo de excepciones de conexión.
+            except websockets.exceptions.ConnectionClosedOK:
+                print("\n\nConexión cerrada de forma normal por desconecta_async()\n")
+                break 
             except websockets.exceptions.ConnectionClosedError as e:
-                print("\nConexión cerrada:", e)
-                self.gui.despliega_mensaje_tx("Conexión cerrada, intenta reconectar...\n")
-                # Intentar reconectar después de unos segundos
+                print("\nConexión interrumpida: se intenta reconectar...", e)
+                self.gui.despliega_mensaje_tx("Conexión interrumpida, se intenta reconectar...\n") 
+                
+                # Intentar reconectar después de unos segundos.
                 self.gui.conectado = False
                 self.gui.supervisa_conexion()
                 await asyncio.sleep(5)
                 await self.desconecta_async()
                 await self.conecta_async(self.mesa_id)
+                break
+            except Exception as e:
+                print(f"Error inesperado en lector_websocket: {e}")
                 break
 
     async def suscribe(self, mesa_id): 

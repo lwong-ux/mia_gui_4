@@ -13,7 +13,7 @@ import psutil
 class MiaGui:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Wong Instruments             MIA - Raspberry Pi            Ver 4.2")
+        self.root.title("Wong Instruments             MIA - Raspberry Pi            Ver 4.3")
         
         # Carga y redimensiona la imagen del logo
         original_logo = Image.open("wi_logo_1.png")  # Reemplaza con la ruta de tu imagen
@@ -74,7 +74,7 @@ class MiaGui:
         # self.url_entry.insert(0,self.websocket_mia.url)  # Valor por defecto
 
         # Título y área de TX
-        tk.Label(text_frame, text="Tx al servidor SysQB", font=("DejaVu Sans Mono", 14)).pack(pady=(0, 5))
+        tk.Label(text_frame, text="Tx al servidor SysQB: 'data'", font=("DejaVu Sans Mono", 14)).pack(pady=(0, 5))
         self.text_area_tx = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, width=45, height=5, font=("DejaVu Sans Mono", 11))
         self.text_area_tx.pack(pady=(0, 10), padx=(10, 10))
         # Agrega margen interno al texto
@@ -82,7 +82,7 @@ class MiaGui:
         self.text_area_tx.insert("1.0", " ", "margin")  # Aplicar la configuración de margen
 
         # Título y área de RX
-        tk.Label(text_frame, text="Rx del servidor SysQB", font=("DejaVu Sans Mono", 14)).pack(pady=(0, 5))
+        tk.Label(text_frame, text="Rx del servidor SysQB: 'message'", font=("DejaVu Sans Mono", 14)).pack(pady=(0, 5))
         self.text_area_rx = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, width=45, height=5, font=("DejaVu Sans Mono", 11))
         self.text_area_rx.pack(pady=(0, 10), padx=(10, 10))
         # Agrega margen interno al texto
