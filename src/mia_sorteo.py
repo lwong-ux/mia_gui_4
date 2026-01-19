@@ -7,7 +7,7 @@ class ManejadorSorteo:
         self.gui = gui
         self.loop = asyncio.get_event_loop()
         # Inicializa los contadores de las cajitas de sorteo
-        self.contadores_cajitas = [0] * 7           # OK, NG-1, NG-2, NG-3, NG-4, NG-5, NG-MIX
+        self.contadores_cajitas = [0] * 8           # OK, NG-1, NG-2, NG-3, NG-4, NG-5, NG-MIX, pieza_numero
         self.estado_botones_inci = [False] * 5      # Estado de los botones de incidentes
         self.multiplicador = 1                      # Multiplicador de piezas: 1, 10, 100
         self.pieza_numero = 1
@@ -20,6 +20,9 @@ class ManejadorSorteo:
         self.contador_ok = 0
         self.contador_ng = 0
         self.contador_activo = False
+
+        # Pila para guardar el estado de los contadores
+        self.stack_contadores = []
 
     # Respuesta al botón INIC: limpia contadores
     def inicia_conteo(self):
@@ -41,7 +44,7 @@ class ManejadorSorteo:
         self.contador_ok = 0
         self.contador_ng = 0
         self.pieza_numero = 1
-        self.contadores_cajitas = [0] * 7
+        self.contadores_cajitas = [0] * 8  # Aseguramos que la lista tenga siempre 8 elementos
         self.gui.limpia_cajitas()
         # Pone el "radiobutton" de multiplicador en X1
         self.gui.multiplicador_var.set(1)
@@ -93,7 +96,23 @@ class ManejadorSorteo:
     def lee_ng(self):
         return self.contador_ng
 
+    def push_contadores(self):
+        # Guarda el estado actual de los contadores en la pila
+        self.stack_contadores.append(self.contadores_cajitas.copy())
+
+    def pop_contadores(self):
+        # Restaura el estado anterior de los contadores desde la pila
+        if self.stack_contadores:
+            self.contadores_cajitas = self.stack_contadores.pop()
+            self.pieza_numero = self.contadores_cajitas[7]
+            for idx in range(7):
+                self.gui.actualiza_cajitas(self.pieza_numero, idx)  # Llama a actualiza_cajitas para reflejar el cambio
+        else:
+            print("La pila de contadores está vacía. No se puede realizar pop.")
+
     def incrementa_contador(self, idx):
+        self.contadores_cajitas[7] = self.pieza_numero
+        self.push_contadores()  # Guarda el estado actual antes de modificarlo
         self.multiplicador = self.gui.multiplicador_var.get()
         self.contadores_cajitas[idx] += self.multiplicador
         ok = ng = 0

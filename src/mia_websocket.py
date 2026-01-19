@@ -133,8 +133,12 @@ class WebSocketMia:
                     #print("\nMensaje recibido:", time.strftime("%H:%M:%S"), data["message"])
                     print("\n\nMENSAJE RECIBIDO EN MIA:\n", time.strftime("%H:%M:%S"), data)
                     self.gui.despliega_mensaje_rx(f"{data.get('message')}")
+                    #
                     if data.get("message", {}).get("accion") == "INICIA_FOLIO":
                         self.gui.sorteo.inicia_conteo()
+                    #
+                    elif data.get("message", {}).get("accion") == "DESHACER_ULTIMO_SORTEO":
+                         self.gui.sorteo.pop_contadores()
                 else:
                     print("\nMensaje desconocido:", data)
                     self.gui.despliega_mensaje_rx(f"Mensaje desconocido: {data}\n" )
